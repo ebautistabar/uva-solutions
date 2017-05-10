@@ -40,6 +40,7 @@ class UVA00929NumberMaze {
                 }
             }
 
+            int goal = (rows - 1) * cols + (cols - 1);
             int start = 0;
             Arrays.fill(distance, 0, rows * cols, INFINITY);
             distance[start] = grid[0];
@@ -48,6 +49,7 @@ class UVA00929NumberMaze {
             while (!pq.isEmpty()) {
                 Tuple current = pq.remove();
                 if (distance[current.cell] < current.d); // we know shorter path already
+                if (current.cell == goal) break;
                 int r = current.cell / cols;
                 int c = current.cell % cols;
                 for (int j = 0; j < DELTA_R.length; j++) {
@@ -62,7 +64,6 @@ class UVA00929NumberMaze {
                 }
             }
 
-            int goal = (rows - 1) * cols + (cols - 1);
             out.println(distance[goal]);
         }
         out.close();
@@ -129,6 +130,8 @@ The only cell we don't enter is the first one, as we're already there. So we
 start with weight start.weight, instead of 0 as usual.
 There are no edge cases.
 For speed:
+- stop when the goal is dequeued. While it's in the queue, it still can be
+improved, but once we dequeue it we are sure it's the shortest path
 - use integer like r * cols + c instead of a Cell class
 - declare arrays with max size at the top: grid is overwritten naturally for
 each test case when reading the input and distance is initialized explicitly
