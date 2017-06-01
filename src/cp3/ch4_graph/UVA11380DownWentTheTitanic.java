@@ -6,8 +6,10 @@ import java.io.InputStreamReader;
 import java.io.OutputStreamWriter;
 import java.io.PrintWriter;
 import java.util.ArrayDeque;
+import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.HashMap;
+import java.util.List;
 import java.util.Map;
 import java.util.Queue;
 import java.util.StringTokenizer;
@@ -51,6 +53,8 @@ class UVA11380DownWentTheTitanic {
             int nodes = 2 + cellToId.size() * 2;
             int source = nodes - 2;
             int sink = nodes - 1;
+            List<List<Integer>> adjList = new ArrayList<>();
+            for (int i = 0; i < nodes; i++) adjList.add(new ArrayList<Integer>());
             int[][] residual = new int[nodes][nodes];
             for (int r = 0; r < rows; r++) {
                 for (int c = 0; c < cols; c++) {
@@ -58,15 +62,15 @@ class UVA11380DownWentTheTitanic {
                         int id = cellToId.get(r * cols + c); // first half contains ids of original cells
                         int exitId = id + cellToId.size(); // second half contains ids resulting of splitting cells
                         if (area[r][c] == WOOD) {
-                            addEdge(residual, id, exitId, INFINITY);
-                            addEdge(residual, exitId, sink, people); // wood can save only so many people
+                            addEdge(adjList, residual, id, exitId, INFINITY);
+                            addEdge(adjList, residual, exitId, sink, people); // wood can save only so many people
                         } else if (area[r][c] == PERSON) {
-                            addEdge(residual, source, id, 1); // there's only 1 person in the cell
-                            addEdge(residual, id, exitId, 1);
+                            addEdge(adjList, residual, source, id, 1); // there's only 1 person in the cell
+                            addEdge(adjList, residual, id, exitId, 1);
                         } else if (area[r][c] == ICEBERG) {
-                            addEdge(residual, id, exitId, INFINITY);
+                            addEdge(adjList, residual, id, exitId, INFINITY);
                         } else { // ice
-                            addEdge(residual, id, exitId, 1);
+                            addEdge(adjList, residual, id, exitId, 1);
                         }
                         // movements in four directions
                         for (int i = 0; i < DELTA_R.length; i++) {
@@ -74,7 +78,7 @@ class UVA11380DownWentTheTitanic {
                             int nc = c + DELTA_C[i];
                             if (nr >= 0 && nr < rows && nc >= 0 && nc < cols && area[nr][nc] != WATER) {
                                 int nextId = cellToId.get(nr * cols + nc);
-                                addEdge(residual, exitId, nextId, INFINITY); // allow as many people as possible between spots
+                                addEdge(adjList, residual, exitId, nextId, INFINITY); // allow as many people as possible between spots
                             }
                         }
                     }
@@ -84,7 +88,7 @@ class UVA11380DownWentTheTitanic {
             // Maxflow Edmond-Karp
             int maxFlow = 0;
             int[] previous = new int[nodes];
-            while (hasAugmentingPath(source, sink, residual, previous)) {
+            while (hasAugmentingPath(source, sink, adjList, residual, previous)) {
                 // get min flow of path
                 int flow = INFINITY;
                 for (int v = sink; v != source; v = previous[v]) {
@@ -106,13 +110,13 @@ class UVA11380DownWentTheTitanic {
         out.close();
     }
 
-    private static boolean hasAugmentingPath(int source, int goal, int[][] residual, int[] previous) {
+    private static boolean hasAugmentingPath(int source, int goal, List<List<Integer>> adjList, int[][] residual, int[] previous) {
         Arrays.fill(previous, -1);
         Queue<Integer> pending = new ArrayDeque<>();
         pending.add(source);
         while (!pending.isEmpty()) {
             int current = pending.remove();
-            for (int next = 0; next < residual[current].length; next++) {
+            for (int next : adjList.get(current)) {
                 if (residual[current][next] > 0 && previous[next] == -1) {
                     previous[next] = current;
                     if (next == goal) return true;
@@ -123,8 +127,10 @@ class UVA11380DownWentTheTitanic {
         return false;
     }
 
-    private static void addEdge(int[][] residual, int from, int to, int capacity) {
+    private static void addEdge(List<List<Integer>> adjList, int[][] residual, int from, int to, int capacity) {
         //out.printf("(%d,%d)->%d%n", from, to, capacity);
+        adjList.get(from).add(to);
+        adjList.get(to).add(from);
         residual[from][to] = capacity;
         residual[to][from] = 0;
     }
