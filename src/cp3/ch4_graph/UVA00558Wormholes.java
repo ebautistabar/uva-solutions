@@ -18,6 +18,8 @@ class UVA00558Wormholes {
     private static final BufferedReader in = new BufferedReader(new InputStreamReader(System.in));
     private static final PrintWriter out = new PrintWriter(new BufferedWriter(new OutputStreamWriter(System.out)));
 
+    private static final int INFINITY = (int) 1e9;
+
     public static void main(String args[]) throws IOException {
         int tests = Integer.parseInt(getLine().trim());
         for (int t = 1; t <= tests; t++) {
@@ -40,8 +42,14 @@ class UVA00558Wormholes {
             // so we are not protected from it. In the case of Dijkstra we
             // always know that distance[u] has been updated and will not hold
             // infinity when we execute the sum
-            Arrays.fill(distance, (int) 1e9);
+            Arrays.fill(distance, INFINITY);
             distance[0] = 0;
+            // UVa doesn't require it, but some test cases on UDebug contain
+            // clusters of star systems with loops but not reachable from the
+            // start system. Such loops are not valid solutions, as they can't
+            // be reached. Let's track reachability to take care of that
+            boolean[] reachable = new boolean[systems];
+            reachable[0] = true;
             for (int i = 0; i < systems - 1; i++) { // v - 1 times
                 for (int u = 0; u < systems; u++) { // for each node
                     for (int j = 0; j < adjList.get(u).size(); j++) {
@@ -49,6 +57,7 @@ class UVA00558Wormholes {
                         if (distance[adj.node] > distance[u] + adj.cost) {
                             distance[adj.node] = distance[u] + adj.cost;
                         }
+                        reachable[adj.node] = reachable[adj.node] || reachable[u];
                     }
                 }
             }
@@ -56,6 +65,7 @@ class UVA00558Wormholes {
             // Check for negative weight cycle
             boolean hasCycle = false;
             for (int u = 0; u < systems; u++) { // for each node
+                if (!reachable[u]) continue; // if it's not reachable, don't check for loops
                 for (int j = 0; j < adjList.get(u).size(); j++) {
                     Tuple adj = adjList.get(u).get(j);
                     if (distance[adj.node] > distance[u] + adj.cost) {
